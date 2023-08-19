@@ -7,6 +7,29 @@
 #include "./log/log.h"
 
 #include <map>
+#include <fstream>
+
+#include <unistd.h>
+#include <signal.h>
+#include <fcntl.h>
+#include <assert.h>
+#include <string.h>
+#include <pthread.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <stdarg.h>
+#include <errno.h>
+
+#include <netinet/in.h>
+#include <arpa/inet.h>
+
+#include <sys/types.h>
+#include <sys/epoll.h>
+#include <sys/socket.h>
+#include <sys/mman.h>
+#include <sys/wait.h>
+#include <sys/uio.h>
+#include <sys/stat.h>
 /**
  * @brief http_conn类，用于处理http连接
 */
@@ -91,7 +114,8 @@ private:
     int cgi;                                //是否启用CGI
     char *m_string;                         //存储请求头数据
     int bytes_to_send;                      //剩余发送字节数
-    char *doc_root;                         //网站根目录
+    int bytes_have_send;                    //已经发送字节数
+    char *doc_root;                         // 网站根目录
 
     map<string, string> m_users;            //用户名和密码
     int m_trig_mode;                        //触发模式
@@ -113,7 +137,7 @@ public:
      * @param sockfd 套接字描述符，表示与客户端的连接
      * @param addr 客户端的地址结构，用于标识客户端的IP地址和端口号
      * @param root 网站根目录的路径
-     * @param trig_mode 触发模式，指定使用的epoll触发模式
+     * @param trig_mode 触发模式，指定使用的epoll触发模式(ET/LT)
      * @param close_log 是否关闭日志，用于控制是否关闭日志输出
      * @param user 数据库用户名
      * @param passward 数据库密码
@@ -251,7 +275,7 @@ private:
      * @param ... 格式化参数
      * @return 是否添加成功
      */    
-    bool add_content(const char *content, ...);
+    bool add_content(const char *content);
 
     /**
      * @brief 添加状态行到响应缓冲区中
