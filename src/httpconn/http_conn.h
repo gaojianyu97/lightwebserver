@@ -19,7 +19,9 @@ public:
     static const int FILENAME_LEN = 200;
     static const int READ_BUFFER_SIZE = 2048;
     static const int WRITE_BUFFER_SIZE = 1024;
-
+    /**
+     * @brief 请求方法
+    */
     enum METHOD {
         GET = 0,          // GET 请求
         POST,             // POST 请求
@@ -32,12 +34,18 @@ public:
         PATH              // PATH 请求
     };
 
+    /**
+     * @brief 检查请求状态
+    */
     enum CHECK_STATE {
         CHECK_STATE_REQUESTLINE = 0,  // 检查请求行状态
         CHECK_STATE_HEADER,           // 检查请求头状态
         CHECK_STATE_CONTENT           // 检查请求正文状态
     };
 
+    /**
+     * @brief http连接状态
+    */
     enum HTTP_CODE {
         NO_REQUEST,        // 无请求
         GET_REQUEST,       // GET 请求
@@ -49,6 +57,9 @@ public:
         CLOSED_CONNECTION  // 连接已关闭
     };
 
+    /**
+     * @brief 行解析状态
+    */
     enum LINE_STATE
     {
         LINE_OK = 0,    //行解析正常
