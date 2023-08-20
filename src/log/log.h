@@ -6,6 +6,7 @@
 #include <string>
 #include <stdarg.h>
 #include <pthread.h>
+#include <chrono>
 #include "block_queue.h"
 
 using namespace std;
@@ -65,7 +66,7 @@ public:
      * @brief 异步地刷新日志内容
     */
     static void *flush_log_thread(void *args){
-        Log::get_instance()->async_write_log();
+        get_instance()->async_write_log();
     }
 
     /**
@@ -77,23 +78,23 @@ public:
      * @param max_queue_size 最大队列大小，默认大小0,异步需要设置阻塞队列的长度，同步不需要设置
      * @return true:初始化成功，false:初始化失败
     */
-    bool Log::init(const char *file_name, int close_log, int log_buf_size = 8192, int split_lines = 5000000, int max_queue_size = 0);
+    bool init(const char *file_name, int close_log, int log_buf_size = 8192, int split_lines = 5000000, int max_queue_size = 0);
 
     /**
      * @brief 写入日志
      * @param level 0:LOG_DEBUG,1:LOG_INFO,2:LOG_WARN,3:LOG_ERROR
      * @param format 格式化字符串，用于指定日志的格式
     */
-    void Log::write_log(int level, const char *format, ...);
+    void write_log(int level, const char *format, ...);
 
     /**
      * @brief 刷新日志，将缓冲区中的日志内容写入文件
     */
-    void Log::flush(void);
+    void flush(void);
 };
 
 #define LOG_DEBUG(format, ...)if(0 == m_close_log){Log::get_instance()->write_log(0, format, ##__VA_ARGS__); Log::get_instance()->flush();}
 #define LOG_INFO(format, ...)if(0 == m_close_log){Log::get_instance()->write_log(1, format, ##__VA_ARGS__); Log::get_instance()->flush();}
 #define LOG_WARN(format, ...)if(0 == m_close_log){Log::get_instance()->write_log(2, format, ##__VA_ARGS__); Log::get_instance()->flush();}
 #define LOG_ERROR(format, ...)if(0 == m_close_log){Log::get_instance()->write_log(3, format, ##__VA_ARGS__); Log::get_instance()->flush();}
-#endif LOG_H
+#endif
