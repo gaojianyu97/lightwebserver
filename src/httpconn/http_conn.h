@@ -1,10 +1,10 @@
 #ifndef HTTP_CONN_H
 #define HTTP_CONN_H
 
-#include "./lock/locker.h"
-#include "./MySqlPool/sql_conn_pool.h"
-#include "./timer/lst_timer.h"
-#include "./log/log.h"
+#include "../lock/locker.h"
+#include "../MySqlPool/sql_conn_pool.h"
+#include "../timer/lst_timer.h"
+#include "../log/log.h"
 
 #include <map>
 #include <fstream>
@@ -35,8 +35,8 @@
 */
 class http_conn{
 public:
-    http_conn();
-    ~http_conn();
+    http_conn(){}
+    ~http_conn(){}
 
 public:
     static const int FILENAME_LEN = 200;
@@ -318,4 +318,4 @@ private:
     bool add_blank_line();
 };
 
-#endif HTTP_CONN_H
+#endif
