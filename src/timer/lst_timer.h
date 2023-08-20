@@ -1,8 +1,8 @@
 #ifndef LST_TIMER_H
 #define LST_TIMER_H
 
-#include "./log/log.h"
-#include "./httpconn/http_conn.h"
+#include "../log/log.h"
+#include "../httpconn/http_conn.h"
 
 #include <unistd.h>
 #include <signal.h>
@@ -99,7 +99,7 @@ public:
 /**
  * @brief utils工具箱类，epoll任务处理
 */
-class utils{
+class Utils{
 public:
     static int *u_pipefd;       //管道描述符
     sort_timer_lst m_timer_lst; //排序计时器链表
@@ -110,12 +110,12 @@ public:
     /**
      * @brief 构造函数，工具类初始化
     */
-    utils();
+    Utils(){}
 
     /**
      * @brief 析构函数，离开作用域时进行资源回收
     */
-    ~utils();
+    ~Utils(){}
 
     /**
      * @brief 初始化时间槽大小
@@ -170,4 +170,4 @@ public:
 */
 void cb_func(client_data *user_data);
 
-#endif LST_TIMER_H
+#endif

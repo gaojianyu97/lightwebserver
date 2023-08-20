@@ -90,7 +90,7 @@ void sort_timer_lst::del_timer(util_timer *timer){
     if(!timer)
         return;
     //要删除的计时器为头和尾
-    if(timer==head&&timer==tail){
+    if(timer==head && timer==tail){
         delete timer;
         head = NULL;
         tail = NULL;
@@ -139,11 +139,11 @@ void sort_timer_lst::tick(){
     }
 }
 
-void utils::init(int timeslot){
+void Utils::init(int timeslot){
     m_timeslot = timeslot;//触发事件时间初始化
 }
 
-int utils::set_nonblocking(int fd){
+int Utils::set_nonblocking(int fd){
     
     int old_option = fcntl(fd, F_GETFL);// 获取文件描述符的旧的文件状态标志
     int new_option = old_option | O_NONBLOCK;// 将旧的文件状态标志与 O_NONBLOCK 进行按位或操作，设置为非阻塞模式
@@ -151,7 +151,7 @@ int utils::set_nonblocking(int fd){
     return old_option;// 返回旧的文件状态标志，以便在需要时进行恢复
 }
 
-void utils::add_fd(int epoll_fd,int fd,bool one_shot,int trig_mode){
+void Utils::add_fd(int epoll_fd,int fd,bool one_shot,int trig_mode){
     epoll_event event;
     event.data.fd = fd;
 
@@ -174,14 +174,14 @@ void utils::add_fd(int epoll_fd,int fd,bool one_shot,int trig_mode){
     set_nonblocking(fd);
 }
 
-void utils::sig_handler(int sig){
+void Utils::sig_handler(int sig){
     int save_error = errno;// 保存当前的 errno 值
     int msg = sig;// 将收到的信号值存储到 msg 变量中
     send(u_pipefd[1], (char *)&msg, 1, 0);// 向管道的写端发送信号值
     errno = save_error;// 向管道的写端发送信号值
 }
 
-void utils::add_sig(int sig,void(handler)(int),bool restart){
+void Utils::add_sig(int sig,void(handler)(int),bool restart){
     struct sigaction sa;
     memset(&sa, '\0', sizeof(sa));
     sa.sa_handler = handler;// 设置信号处理函数
@@ -197,24 +197,24 @@ void utils::add_sig(int sig,void(handler)(int),bool restart){
     assert(sigaction(sig, &sa, NULL) != -1);
 }
 
-void utils::timer_handler(){
+void Utils::timer_handler(){
     m_timer_lst.tick();// 触发定时器链表中已到期的计时器的回调函数
     alarm(m_timeslot);// 重新设置定时器，以便下一次触发
 }
 
-void utils::show_error(int conn_fd,const char *info){
+void Utils::show_error(int conn_fd,const char *info){
     send(conn_fd, info, strlen(info), 0);// 发送错误信息到连接套接字
     close(conn_fd);// 关闭连接套接字
 }
 
-int *utils::u_pipefd = 0;
-int utils::u_epollfd = 0;
+int *Utils::u_pipefd = 0;
+int Utils::u_epollfd = 0;
 
-class utils;
+class Utils;
 
 // 回调函数，用于处理超时的客户连接
 void cb_func(client_data *user_data){
-    epoll_ctl(utils::u_epollfd, EPOLL_CTL_DEL, user_data->sockfd, 0);
+    epoll_ctl(Utils::u_epollfd, EPOLL_CTL_DEL, user_data->sockfd, 0);
     assert(user_data);
     close(user_data->sockfd);
     http_conn::m_user_count--;
