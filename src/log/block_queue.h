@@ -5,7 +5,7 @@
 #include <stdlib.h>
 #include <pthread.h>
 #include <sys/time.h>
-#include "./lock/locker.h"
+#include "../lock/locker.h"
 
 using namespace std;
 /**
@@ -197,7 +197,7 @@ public:
     */
    bool pop(T &item,int ms_timeout){
         struct timespec t = {0, 0};
-        struct timespec now = {0, 0};
+        struct timeval now = {0, 0};
         gettimeofday(&now, NULL);
         m_mutex.lock();
 
@@ -229,4 +229,4 @@ public:
    }
 };
 
-#endif BLOCK_QUEUE_H
+#endif
