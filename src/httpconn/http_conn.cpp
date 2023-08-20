@@ -40,7 +40,7 @@ void add_fd(int epoll_fd,int fd,bool one_shot,int trig_mode){
     event.data.fd = fd;
 
     // 根据传入的触发模式设置事件类型
-    if(trig_mode==1){
+    if(1==trig_mode){
         event.events = EPOLLIN | EPOLLET | EPOLLRDHUP;//监听可读事件（有数据可读），使用边缘触发模式，并且可以检测连接的对端关闭
     }else{
         event.events = EPOLLIN | EPOLLRDHUP;//监听可读事件（有数据可读），并且可以检测连接的对端关闭
@@ -83,7 +83,7 @@ void modfd(int epollfd, int fd, int ev, int trig_mode)
     event.data.fd = fd;
     
     // 根据触发模式设置事件类型和触发条件
-    if (trig_mode==1)
+    if (1==trig_mode)
         event.events = ev | EPOLLET | EPOLLONESHOT | EPOLLRDHUP;
     else
         event.events = ev | EPOLLONESHOT | EPOLLRDHUP;
@@ -94,8 +94,8 @@ void modfd(int epollfd, int fd, int ev, int trig_mode)
 }
 
 void http_conn::initmysql_result(connection_pool *conn_pool){
-
-    //连接池取出
+    printf("http_conn::initmysql_result(connection_pool *conn_pool)\n");
+    // 连接池取出
     MYSQL *mysql = NULL;
     connection_raii mysql_con(&mysql, conn_pool);
 
@@ -123,7 +123,8 @@ void http_conn::initmysql_result(connection_pool *conn_pool){
 }
 
 void http_conn::close_conn(bool real_close){
-    //有效连接且确认关闭
+    printf("http_conn::close_conn(bool real_close)\n");
+    // 有效连接且确认关闭
     if (real_close && (m_sockfd != -1))
     {
         printf("close %d\n", m_sockfd);
@@ -134,6 +135,7 @@ void http_conn::close_conn(bool real_close){
 }
 
 void http_conn::init(int sockfd, const sockaddr_in &addr, char *root, int trig_mode, int close_log, string user, string passward, string sqlname){
+    printf("http_conn::init(int sockfd, const sockaddr_in &addr, char *root, int trig_mode, int close_log, string user, string passward, string sqlname)\n");
     m_sockfd = sockfd;
     m_address = addr;
     // 将套接字描述符添加到epoll事件监听中
@@ -154,6 +156,7 @@ void http_conn::init(int sockfd, const sockaddr_in &addr, char *root, int trig_m
 }
 
 void http_conn::init(){
+    printf("http_conn::init()\n");
     mysql = NULL;
     bytes_to_send = 0;
     bytes_have_send = 0;
@@ -179,38 +182,41 @@ void http_conn::init(){
 }
 
 http_conn::LINE_STATE http_conn::parse_line(){
+    printf("http_conn::LINE_STATE http_conn::parse_line()\n");
     char temp;
     // 遍历读缓冲区中的数据
-    for (; m_checked_idx < m_read_idx;m_checked_idx++){
+    for (; m_checked_idx < m_read_idx;++m_checked_idx){
         temp = m_read_buf[m_checked_idx];
-        if(temp=='\r'){
-            if((m_checked_idx+1)==m_read_idx)
-                return LINE_OPEN;// 行未完整读取，需要继续读取
-            else if(m_read_buf[m_checked_idx+1]=='\n'){
+        if(temp == '\r'){
+            if((m_checked_idx+1) == m_read_idx)
+                return LINE_OPEN; // 行未完整读取，需要继续读取
+            else if(m_read_buf[m_checked_idx+1] == '\n'){
                 m_read_buf[m_checked_idx++] = '\0';
                 m_read_buf[m_checked_idx++] = '\0';
                 return LINE_OK;// 行已经完整读取，返回 LINE_OK
             }
             return LINE_BAD;// 不符合行终止符要求，返回 LINE_BAD
-        }else if(temp=='\n'){
-            if(m_checked_idx>1&&m_read_buf[m_checked_idx-1]=='\r'){
+        }else if(temp == '\n'){
+            if(m_checked_idx>1 && m_read_buf[m_checked_idx-1] == '\r'){
                 m_read_buf[m_checked_idx - 1] = '\0';
                 m_read_buf[m_checked_idx++] = '\0';
                 return LINE_OK;// 行已经完整读取，返回 LINE_OK
             }
+            return LINE_BAD;
         }
     }
     return LINE_OPEN;
 }
 
 bool http_conn::read_once(){
-    if(m_read_idx>=READ_BUFFER_SIZE)
+    printf("http_conn::read_once()\n");
+    if (m_read_idx >= READ_BUFFER_SIZE)
         return false;// 读缓冲区已满，无法继续读取数据
 
     int bytes_read = 0;
 
     //LT模式，阻塞读取
-    if(m_trig_mode==0){
+    if(0==m_trig_mode){
         bytes_read = recv(m_sockfd, m_read_buf + m_read_idx, READ_BUFFER_SIZE - m_read_idx, 0);
         m_read_idx += bytes_read;
 
@@ -236,9 +242,13 @@ bool http_conn::read_once(){
 }
 
 http_conn::HTTP_CODE http_conn::parse_request_line(char *text){
-    m_url = strpbrk(text, "\t");
-    if(!m_url)
+    printf("http_conn::parse_request_line(char *text)\n");
+    m_url = strpbrk(text, " \t");
+    if(!m_url){
+        printf("1\n");
         return BAD_REQUEST;
+    }
+        
 
     *m_url++ = '\0';
     char *method = text;
@@ -248,14 +258,26 @@ http_conn::HTTP_CODE http_conn::parse_request_line(char *text){
     else if(strcasecmp(method,"POST")==0){
         m_method = POST;
         cgi = 1;
-    }else
+    }else{
+        printf("2\n");
         return BAD_REQUEST;
+    }
+        
 
-    m_url += strspn(m_url, "\t");
-    m_version = strpbrk(m_url, "\t");
-
-    if(strcasecmp(m_version,"HTTP/1.1")!=0)
+    m_url += strspn(m_url, " \t");
+    m_version = strpbrk(m_url, " \t");
+    if(!m_version){
+        printf("3\n");
+        return BAD_REQUEST;
+    }
+        
+    *m_version++ = '\0';
+    m_version += strspn(m_version, " \t");
+    if(strcasecmp(m_version,"HTTP/1.1")!=0){
+        printf("4\n");
         return BAD_REQUEST;//只支持HTTP1.1协议
+    }
+        
 
     if(strncasecmp(m_url,"http://",7)==0){
         m_url += 7;
@@ -267,8 +289,10 @@ http_conn::HTTP_CODE http_conn::parse_request_line(char *text){
         m_url = strchr(m_url, '/');
     }
 
-    if(!m_url||m_url[0]!='/')
+    if(!m_url || m_url[0]!='/'){
+        printf("5\n");
         return BAD_REQUEST;// URL格式错误，返回400 Bad Request
+    }
 
     // 当URL为'/'时，将其替换为默认页面路径
     if(strlen(m_url)==1)
@@ -281,7 +305,9 @@ http_conn::HTTP_CODE http_conn::parse_request_line(char *text){
 //解析请求头
 http_conn::HTTP_CODE http_conn::parse_headers(char *text){
 
-if(text[0] == '\0'){
+    printf("http_conn::parse_headers(char *text)\n");
+    if (text[0] == '\0')
+    {
         if(m_content_length != 0){
             m_check_state = CHECK_STATE_CONTENT;
             return NO_REQUEST;
@@ -311,7 +337,9 @@ if(text[0] == '\0'){
 
 //判断http请求是否被完整读入
 http_conn::HTTP_CODE http_conn::parse_content(char *text){
-    if(m_read_idx >= (m_content_length + m_checked_idx)){
+    printf("http_conn::parse_content(char *text)\n");
+    if (m_read_idx >= (m_content_length + m_checked_idx))
+    {
         text[m_content_length] = '\0';
         //POST请求中最后为输入的用户名和密码
         m_string = text;
@@ -322,6 +350,7 @@ http_conn::HTTP_CODE http_conn::parse_content(char *text){
 }
 
 http_conn::HTTP_CODE http_conn::process_read(){
+    printf("http_conn::process_read()\n");
 
     LINE_STATE line_state = LINE_OK;
     HTTP_CODE ret = NO_REQUEST;
@@ -331,24 +360,29 @@ http_conn::HTTP_CODE http_conn::process_read(){
         text = get_line();//获取当前行的文本数据
         m_start_line = m_checked_idx;//更新下一行的起始索引
         LOG_INFO("%s", text);//打印当前行的内容，用于调试
-
-        //根据当前解析状态进行不同的处理
+        printf("m_check_state:%d,line state:%d\n", m_check_state, line_state);
+        // 根据当前解析状态进行不同的处理
         switch (m_check_state){
             //解析请求行
             case CHECK_STATE_REQUESTLINE:
             {
-                ret = parse_request_line(text);
-                if (ret == BAD_REQUEST)
-                    return BAD_REQUEST;
+            printf("%s\n", text);
+            ret = parse_request_line(text);
+            if (ret == BAD_REQUEST)
+            {
+                printf("6\n");
+                return BAD_REQUEST;
+                }
                 break;
             }
             //解析请求头
             case CHECK_STATE_HEADER:
             {
                 ret = parse_headers(text);
-                if (ret == BAD_REQUEST)
+                if (ret == BAD_REQUEST){
+                    printf("7\n");
                     return BAD_REQUEST;
-                else if (ret == GET_REQUEST)
+                }else if(ret == GET_REQUEST)
                 {
                     return do_request();//请求内容解析完毕，执行请求处理
                 }
@@ -373,8 +407,10 @@ http_conn::HTTP_CODE http_conn::process_read(){
 
 //生成要返回给客户端的响应文件地址
 http_conn::HTTP_CODE http_conn::do_request(){
+    printf("http_conn::do_request()\n");
 
     strcpy(m_real_file, doc_root);
+    // printf("%s", m_real_file);
     int len = strlen(doc_root);
     //printf("m_url:%s\n", m_url);
     const char *p = strrchr(m_url, '/');
@@ -479,8 +515,11 @@ http_conn::HTTP_CODE http_conn::do_request(){
     if(!(m_file_stat.st_mode & S_IROTH))
         return FORBIDDEN_REQUEST;
 
-    if(S_ISDIR(m_file_stat.st_mode))
+    if(S_ISDIR(m_file_stat.st_mode)){
+        printf("8\n");
         return BAD_REQUEST;
+    }
+        
 
     int fd = open(m_real_file, O_RDONLY);
     m_file_address = (char *)mmap(0, m_file_stat.st_size, PROT_READ, MAP_PRIVATE, fd, 0);
@@ -499,6 +538,7 @@ void http_conn::unmap(){
 
 //将数据写入客户端连接的发送缓冲区
 bool http_conn::write(){
+    printf("http_conn::write()\n");
     int temp = 0;
 
     if(bytes_to_send == 0){
@@ -554,7 +594,8 @@ bool http_conn::write(){
 }
 
 bool http_conn::add_response(const char *format,...){
-    if(m_write_idx >= WRITE_BUFFER_SIZE)
+    printf("http_conn::add_response(const char *format,...)\n");
+    if (m_write_idx >= WRITE_BUFFER_SIZE)
         return false;
     va_list arg_list;
     va_start(arg_list, format);
@@ -573,36 +614,42 @@ bool http_conn::add_response(const char *format,...){
 }
 
 bool http_conn::add_state_line(int state,const char *title){
+    printf("http_conn::add_state_line(int state,const char *title)\n");
     return add_response("%s %d %s\r\n", "HTTP/1.1", state, title);
-
 }
 
 bool http_conn::add_headers(int content_len){
+    printf("http_conn::add_headers(int content_len)\n");
     return add_content_length(content_len) && add_linger() && add_blank_line();
-
 }
 
 bool http_conn::add_content_length(int content_len){
+    printf("http_conn::add_content_length(int content_len)\n");
     return add_response("Content-Length:%d\r\n", content_len);
 }
 
 bool http_conn::add_content_type(){
+    printf("http_conn::add_content_type()\n");
     return add_response("Content-Type:%s\r\n", "text/html");
 }
 
 bool http_conn::add_linger(){
+    printf("http_conn::add_linger()\n");
     return add_response("Connection:%s\r\n", (m_linger == true) ? "keep-alive" : "close");
 }
 
 bool http_conn::add_blank_line(){
+    printf("http_conn::add_blank_line()\n");
     return add_response("%s", "\r\n");
 }
 
 bool http_conn::add_content(const char *content){
+    printf("http_conn::add_content(const char *content)\n");
     return add_response("%s", content);
 }
 
 bool http_conn::process_write(HTTP_CODE ret){
+    printf("http_conn::process_write(HTTP_CODE ret)\n");
     switch (ret)
     {
     case INTERNAL_ERROR:
@@ -662,6 +709,7 @@ bool http_conn::process_write(HTTP_CODE ret){
 }
 
 void http_conn::process(){
+    printf("http_conn::process()\n");
     HTTP_CODE read_ret = process_read();
     if (read_ret == NO_REQUEST)
     {
