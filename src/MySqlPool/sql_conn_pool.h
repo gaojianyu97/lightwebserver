@@ -1,8 +1,8 @@
 #ifndef SQL_CONN_POOL_H
 #define SQL_CONN_POOL_H
 
-#include "./lock/locker.h"
-#include "./log/log.h"
+#include "../lock/locker.h"
+#include "../log/log.h"
 
 #include <list>
 #include <error.h>
@@ -105,4 +105,4 @@ public:
     ~connection_raii();
 };
 
-#endif SQL_CONN_POOL_H
+#endif
