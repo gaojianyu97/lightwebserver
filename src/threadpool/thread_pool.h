@@ -120,38 +120,54 @@ void *threadpool<T>::worker(void *arg)
 template <typename T>
 void threadpool<T>::run()
 {
-    while(true){
-        m_queuestat.wait();
-        m_queuelocker.lock();
+    while (true)
+    {
+        m_queuestat.wait(); // 等待是否有任务需要处理
+        m_queuelocker.lock(); // 获取请求队列的互斥锁
         if (m_workqueue.empty())
         {
-            m_queuelocker.unlock();
+            m_queuelocker.unlock(); // 如果队列为空，释放互斥锁并继续等待
             continue;
         }
-        T *request = m_workqueue.front();
-        m_workqueue.pop_front();
-        m_queuelocker.unlock();
-        if(!request)
+        T *request = m_workqueue.front(); // 获取队列中的第一个请求
+        m_workqueue.pop_front(); // 从队列中移除该请求
+        m_queuelocker.unlock(); // 释放互斥锁
+
+        if (!request)
             continue;
-        if(1 == m_actor_model){
-            if(0 == request->m_state){
-                if(request->read_once()){
+
+        // 根据线程池的模型类型（m_actor_model），执行不同的处理逻辑
+        if (1 == m_actor_model)
+        {
+            if (0 == request->m_state)
+            {
+                if (request->read_once())
+                {
                     request->improv = 1;
                     connection_raii mysqlcon(&request->mysql, m_connPool);
                     request->process();
-                }else{
-                    request->improv = 1;
-                    request->timer_flag = 1;
                 }
-            }else{
-                if(request->write()){
-                    request->improv = 1;
-                }else{
+                else
+                {
                     request->improv = 1;
                     request->timer_flag = 1;
                 }
             }
-        }else{
+            else
+            {
+                if (request->write())
+                {
+                    request->improv = 1;
+                }
+                else
+                {
+                    request->improv = 1;
+                    request->timer_flag = 1;
+                }
+            }
+        }
+        else
+        {
             connection_raii mysqlcon(&request->mysql, m_connPool);
             request->process();
         }
